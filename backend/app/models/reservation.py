@@ -31,7 +31,12 @@ class Reservation(Base):
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[ReservationStatus] = mapped_column(
-        Enum(ReservationStatus, name="reservation_status", create_type=False),
+        Enum(
+            ReservationStatus,
+            name="reservation_status",
+            create_type=False,
+            values_callable=lambda e: [member.value for member in e],
+        ),
         default=ReservationStatus.PENDING,
         nullable=False,
         index=True,
