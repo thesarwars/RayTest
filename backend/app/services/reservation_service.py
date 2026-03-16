@@ -44,6 +44,11 @@ class ReservationService:
     # Reserve
     # ──────────────────────────────────────────────────────────────
     async def reserve(self, user_id: UUID, product_id: UUID, quantity: int) -> dict:
+        # Fetch product (needed for name in response)
+        product = await self.product_repo.get_by_id(product_id)
+        if not product:
+            raise NotFoundError("Product", product_id)
+
         # ① Fast-path: Redis atomic decrement (in-memory, single-threaded)
         stock_after = await redis_client.atomic_decrement_stock(str(product_id), quantity)
         if stock_after < 0:
@@ -75,6 +80,7 @@ class ReservationService:
         return {
             "reservation_id": str(reservation.id),
             "product_id": str(product_id),
+            "product_name": product.name,
             "quantity": quantity,
             "status": reservation.status.value,
             "expires_at": expires_at.isoformat(),
@@ -119,9 +125,11 @@ class ReservationService:
         reservation = await self.reservation_repo.get_by_id_and_user(reservation_id, user_id)
         if not reservation:
             raise NotFoundError("Reservation", reservation_id)
+        product = await self.product_repo.get_by_id(reservation.product_id)
         return {
             "reservation_id": str(reservation.id),
             "product_id": str(reservation.product_id),
+            "product_name": product.name if product else "Unknown",
             "quantity": reservation.quantity,
             "status": reservation.status.value,
             "expires_at": reservation.expires_at.isoformat() if reservation.expires_at else None,
@@ -130,10 +138,15 @@ class ReservationService:
 
     async def list_mine(self, user_id: UUID) -> list[dict]:
         reservations = await self.reservation_repo.list_by_user(user_id)
+        # Batch-fetch product names
+        product_ids = {r.product_id for r in reservations}
+        products = {pid: await self.product_repo.get_by_id(pid) for pid in product_ids}
+
         return [
             {
                 "reservation_id": str(r.id),
                 "product_id": str(r.product_id),
+                "product_name": products[r.product_id].name if products.get(r.product_id) else "Unknown",
                 "quantity": r.quantity,
                 "status": r.status.value,
                 "expires_at": r.expires_at.isoformat() if r.expires_at else None,

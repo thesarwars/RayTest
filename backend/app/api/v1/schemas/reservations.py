@@ -9,6 +9,7 @@ class ReserveRequest(BaseModel):
 class ReservationResponse(BaseModel):
     reservation_id: str
     product_id: str
+    product_name: str
     quantity: int
     status: str
     expires_at: str | None = None

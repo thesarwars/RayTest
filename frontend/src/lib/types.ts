@@ -18,6 +18,7 @@ export interface Product {
 export interface Reservation {
   reservation_id: string;
   product_id: string;
+  product_name: string;
   quantity: number;
   status: "pending" | "reserved" | "completed" | "expired" | "cancelled";
   expires_at: string | null;

@@ -48,6 +48,9 @@ export function ReservationCard({ reservation: initial }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          <h3 className="text-sm font-semibold text-gray-900">
+            {reservation.product_name}
+          </h3>
           <span className="text-xs text-gray-400 font-mono">
             {reservation.reservation_id.slice(0, 8)}…
           </span>
